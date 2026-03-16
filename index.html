@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JP Master - Business Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@500;700&display=swap');
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #0f172a; color: #f1f5f9; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .option-btn { transition: all 0.2s; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .option-btn:hover { background: #334155; border-color: #38bdf8; }
+        .progress-fill { transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+        .shake { animation: shake 0.4s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+        .hidden-screen { display: none; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-lg">
+        <!-- 상단 프로그레스 바 -->
+        <div class="mb-4 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+            <span>Daily Goal Progress</span>
+            <span id="progress-text">0 / 20</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-800 rounded-full mb-8 overflow-hidden">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-500 progress-fill" style="width: 0%"></div>
+        </div>
+
+        <!-- 메인 퀴즈 카드 -->
+        <div id="quiz-card" class="glass-card rounded-3xl shadow-2xl overflow-hidden relative">
+            <div class="px-8 py-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div>
+                    <p id="quiz-type-label" class="text-[10px] font-bold text-sky-400 tracking-widest uppercase mb-1">Check Meaning</p>
+                    <h1 class="text-xl font-semibold tracking-tight">日本語単語学習</h1>
+                </div>
+                <button onclick="requestNotification()" class="p-2 bg-slate-800/50 rounded-full hover:bg-slate-700 transition-colors border border-white/5">🔔</button>
+            </div>
+
+            <div class="p-8">
+                <div id="question-container" class="text-center min-h-[200px] flex flex-col justify-center">
+                    <div id="sentence-box" class="hidden mb-6 p-4 bg-slate-800/50 rounded-2xl border border-white/5 cursor-pointer hover:bg-slate-800 transition-colors" onclick="readQuestionSentence()">
+                        <p id="sentence-context" class="text-slate-300 text-lg leading-relaxed"></p>
+                    </div>
+                    <div class="cursor-pointer group" onclick="readQuestionWord()">
+                        <h2 id="question-word" class="text-6xl font-bold mb-2 text-white tracking-tight">...</h2>
+                        <p id="question-sub" class="text-slate-500 text-sm italic h-6"></p>
+                    </div>
+                </div>
+                <div id="options" class="grid grid-cols-1 gap-3 mt-8"></div>
+            </div>
+            
+            <div class="px-8 py-6 bg-white/5 flex justify-between items-center">
+                <button onclick="toggleWrongNote()" class="text-slate-400 hover:text-white text-xs font-medium flex items-center gap-2">📋 오답 노트 (<span id="wrong-count">0</span>)</button>
+                <span id="word-group-tag" class="text-[9px] bg-sky-500/10 text-sky-400 px-3 py-1 rounded-full font-bold border border-sky-500/20 tracking-tighter uppercase">GROUP</span>
+            </div>
+        </div>
+
+        <!-- 학습 완료 화면 -->
+        <div id="completion-screen" class="glass-card rounded-3xl p-12 text-center hidden-screen">
+            <div class="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6"><span class="text-4xl">🎉</span></div>
+            <h2 class="text-3xl font-bold mb-3">Goal Reached!</h2>
+            <p class="text-slate-400 mb-8 leading-relaxed">오늘의 할당량을 모두 달성했습니다.</p>
+            
+            <!-- 결과창 전용 오답 버튼 추가 -->
+            <div class="flex flex-col gap-3 mb-10">
+                <button onclick="toggleWrongNote()" class="w-full py-4 bg-sky-500 hover:bg-sky-400 text-white rounded-2xl font-bold transition-all shadow-lg shadow-sky-500/20">
+                    오답 기록 확인하기
+                </button>
+                <button onclick="resetDayForce()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-bold transition-all border border-white/5">
+                    한 번 더 학습하기
+                </button>
+            </div>
+            
+            <p class="text-[10px] text-slate-500 italic uppercase">Tomorrow at 8:00 AM Notification set</p>
+        </div>
+    </div>
+
+    <!-- 오답 노트 모달 (기존 동일) -->
+    <div id="wrong-note-modal" class="fixed inset-0 bg-slate-950/90 hidden z-50 p-6 flex items-center justify-center">
+        <div class="w-full max-w-md bg-slate-900 rounded-3xl border border-white/10 shadow-2xl h-[80vh] flex flex-col">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                <h3 class="text-xl font-bold">오답 기록</h3>
+                <button onclick="toggleWrongNote()" class="p-2 hover:bg-white/10 rounded-full">✕</button>
+            </div>
+            <div id="wrong-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+            <div class="p-4 border-t border-white/5"><button onclick="clearWrongNote()" class="w-full py-3 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-all">전체 초기화</button></div>
+        </div>
+    </div>
+
+    <script>
+        const GOAL = 20;
+        const correctSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3');
+        const wrongSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
+        correctSound.volume = 0.2; wrongSound.volume = 0.2;
+
+        let wordDatabase = [];
+        let score = 0;
+        let currentWord = null;
+        let currentAnswer = "";
+        let solvedCount = parseInt(localStorage.getItem('solvedCount')) || 0;
+        let lastDate = localStorage.getItem('lastDate') || "";
+        let wrongWords = JSON.parse(localStorage.getItem('wrongWords')) || [];
+
+        async function loadWordData() {
+            try {
+                const response = await fetch('data.json');
+                if (!response.ok) throw new Error('JSON load failed');
+                wordDatabase = await response.json();
+                initQuiz();
+            } catch (error) {
+                console.error(error);
+                alert('data.json 파일을 불러올 수 없습니다. 서버 환경에서 실행해주세요.');
+            }
+        }
+
+        function checkDailyReset() {
+            const today = new Date().toDateString();
+            if (lastDate !== today) {
+                solvedCount = 0;
+                lastDate = today;
+                localStorage.setItem('solvedCount', 0);
+                localStorage.setItem('lastDate', today);
+            }
+        }
+
+        function initQuiz() {
+            checkDailyReset();
+            updateProgressUI();
+            
+            if (solvedCount >= GOAL) {
+                showCompletion();
+                return;
+            }
+
+            if (wordDatabase.length === 0) return;
+
+            currentWord = wordDatabase[Math.floor(Math.random() * wordDatabase.length)];
+            const types = ['meaning', 'yomigana', 'sentence'];
+            setupUI(currentWord, types[Math.floor(Math.random() * types.length)]);
+        }
+
+        function setupUI(word, type) {
+            const wordEl = document.getElementById('question-word');
+            const sentenceBox = document.getElementById('sentence-box');
+            const contextEl = document.getElementById('sentence-context');
+            const optionsContainer = document.getElementById('options');
+            const typeLabel = document.getElementById('quiz-type-label');
+
+            optionsContainer.innerHTML = '';
+            sentenceBox.classList.add('hidden');
+            document.getElementById('word-group-tag').innerText = word.group;
+            document.getElementById('wrong-count').innerText = wrongWords.length;
+
+            let correctAnswer = (type === 'yomigana') ? word.yomigana : word.meaning;
+            let poolKey = (type === 'yomigana') ? 'yomigana' : 'meaning';
+
+            if (type === 'sentence') {
+                sentenceBox.classList.remove('hidden');
+                contextEl.innerText = word.sentence.replace(word.kanji, '____');
+                typeLabel.innerText = "Check Context";
+            } else {
+                typeLabel.innerText = type === 'yomigana' ? "Check Reading" : "Check Meaning";
+            }
+
+            wordEl.innerText = word.kanji;
+            currentAnswer = correctAnswer;
+
+            generateOptions(correctAnswer, poolKey).forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn w-full p-4 text-left border border-white/10 rounded-2xl font-semibold text-slate-300 shadow-lg";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, btn) {
+            if (selected === currentAnswer) {
+                score += 10;
+                solvedCount++;
+                localStorage.setItem('solvedCount', solvedCount);
+                updateProgressUI();
+                btn.classList.add('bg-emerald-500/20', 'border-emerald-500', 'text-emerald-400');
+                correctSound.play();
+                confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
+                setTimeout(initQuiz, 700);
+            } else {
+                btn.classList.add('shake', 'border-red-500', 'text-red-500', 'bg-red-500/10');
+                wrongSound.play();
+                if (!wrongWords.some(w => w.kanji === currentWord.kanji)) {
+                    wrongWords.push(currentWord);
+                    localStorage.setItem('wrongWords', JSON.stringify(wrongWords));
+                    document.getElementById('wrong-count').innerText = wrongWords.length;
+                }
+            }
+        }
+
+        function updateProgressUI() {
+            const percent = (solvedCount / GOAL) * 100;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-text').innerText = `${solvedCount} / ${GOAL}`;
+        }
+
+        function showCompletion() {
+            document.getElementById('quiz-card').classList.add('hidden-screen');
+            document.getElementById('completion-screen').classList.remove('hidden-screen');
+        }
+
+        function resetDayForce() {
+            solvedCount = 0;
+            localStorage.setItem('solvedCount', 0);
+            document.getElementById('quiz-card').classList.remove('hidden-screen');
+            document.getElementById('completion-screen').classList.add('hidden-screen');
+            initQuiz();
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'ja-JP';
+            window.speechSynthesis.speak(msg);
+        }
+
+        function readQuestionWord() { speak(currentWord.kanji); }
+        function readQuestionSentence() { speak(currentWord.sentence); }
+
+        function toggleWrongNote() {
+            const modal = document.getElementById('wrong-note-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) renderWrongList();
+        }
+
+        function renderWrongList() {
+            const list = document.getElementById('wrong-list');
+            list.innerHTML = wrongWords.length ? wrongWords.map(w => `
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between items-center cursor-pointer hover:bg-white/10" onclick="speak('${w.kanji}')">
+                    <div><span class="text-sky-400 text-[10px] font-bold">${w.yomigana}</span><h4 class="text-lg font-bold">${w.kanji}</h4></div>
+                    <span class="text-emerald-400 text-sm font-semibold">${w.meaning}</span>
+                </div>
+            `).join('') : '<p class="text-center text-slate-500 mt-10">오답 기록이 없습니다.</p>';
+        }
+
+        function generateOptions(correct, key) {
+            let opts = [correct];
+            let pool = wordDatabase.map(w => w[key]).filter(v => v !== correct);
+            pool = [...new Set(pool)].sort(() => Math.random() - 0.5);
+            while (opts.length < 4 && pool.length > 0) opts.push(pool.pop());
+            return opts.sort(() => Math.random() - 0.5);
+        }
+
+        function clearWrongNote() {
+            if(confirm('오답 노트를 초기화하시겠습니까?')) {
+                wrongWords = [];
+                localStorage.removeItem('wrongWords');
+                renderWrongList();
+                document.getElementById('wrong-count').innerText = 0;
+            }
+        }
+
+        function requestNotification() {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") alert("알림 설정 완료!");
+            });
+        }
+
+        loadWordData();
+    </script>
+</body>
+</html>
