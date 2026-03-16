@@ -107,7 +107,7 @@
 
         async function loadWordData() {
             try {
-                const response = await fetch('data.json');
+                const response = await fetch('./data.json');
                 if (!response.ok) throw new Error('JSON load failed');
                 wordDatabase = await response.json();
                 initQuiz();
