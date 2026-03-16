@@ -218,16 +218,26 @@
             initQuiz();
         }
 
-        function speak(text) {
+         function speak(text) {
             window.speechSynthesis.cancel();
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'ja-JP';
+            msg.rate = 0.9; // 자연스러운 속도
             window.speechSynthesis.speak(msg);
         }
 
-        function readQuestionWord() { speak(currentWord.yomigana); }
-        function readQuestionSentence() { speak(currentWord.sentence); }
+        // 수정: 한자(kanji) 대신 요미가나(yomigana)를 전달하여 정확한 발음 유도
+        function readQuestionWord() { 
+            if (currentWord) {
+                speak(currentWord.yomigana); 
+            }
+        }
 
+        function readQuestionSentence() { 
+            if (currentWord) {
+                speak(currentWord.sentence); 
+            }
+        }
         function toggleWrongNote() {
             const modal = document.getElementById('wrong-note-modal');
             modal.classList.toggle('hidden');
