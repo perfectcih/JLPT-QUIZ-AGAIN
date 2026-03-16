@@ -234,9 +234,11 @@
         }
 
         function readQuestionSentence() { 
-            if (currentWord) {
-                speak(currentWord.sentence); 
-            }
+    if (currentWord) {
+        // 예문 속의 한자를 요미가나로 바꿔서 읽어주어 오독 방지
+        const speechText = currentWord.sentence.replace(currentWord.kanji, currentWord.yomigana);
+        speak(speechText); 
+    }
         }
         function toggleWrongNote() {
             const modal = document.getElementById('wrong-note-modal');
@@ -247,7 +249,7 @@
         function renderWrongList() {
             const list = document.getElementById('wrong-list');
             list.innerHTML = wrongWords.length ? wrongWords.map(w => `
-                <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between items-center cursor-pointer hover:bg-white/10" onclick="speak('${w.kanji}')">
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between items-center cursor-pointer hover:bg-white/10" onclick="speak('${w.yomigana}')">
                     <div><span class="text-sky-400 text-[10px] font-bold">${w.yomigana}</span><h4 class="text-lg font-bold">${w.kanji}</h4></div>
                     <span class="text-emerald-400 text-sm font-semibold">${w.meaning}</span>
                 </div>
