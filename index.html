@@ -8,56 +8,23 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@500;700&display=swap');
-        
         body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #0f172a; color: #f1f5f9; margin: 0; padding: 0; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .option-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); }
         .option-btn:hover { background: #334155; border-color: #38bdf8; }
         .progress-fill { transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
-        
         .shake { animation: shake 0.4s ease-in-out; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
-        
         .hidden-screen { display: none; }
-
-        /* --- 한자 힌트 툴팁 스타일 --- */
         .kanji-container { position: relative; display: inline-block; }
         .hint-tooltip {
-            visibility: hidden;
-            position: absolute;
-            bottom: 110%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #38bdf8; /* Sky 400 */
-            color: #0f172a;
-            text-align: center;
-            padding: 8px 12px;
-            border-radius: 12px;
-            white-space: nowrap;
-            font-size: 0.875rem;
-            font-weight: bold;
-            z-index: 10;
-            opacity: 0;
-            transition: opacity 0.3s, visibility 0.3s;
+            visibility: hidden; position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+            background-color: #38bdf8; color: #0f172a; text-align: center; padding: 8px 12px; border-radius: 12px;
+            white-space: nowrap; font-size: 0.875rem; font-weight: bold; z-index: 10; opacity: 0; transition: opacity 0.3s;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
         }
-        .hint-tooltip::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -6px;
-            border-width: 6px;
-            border-style: solid;
-            border-color: #38bdf8 transparent transparent transparent;
-        }
-        /* PC: 호버 시 표시 / Mobile: 클래스 추가 시 표시 */
-        .kanji-container:hover .hint-tooltip,
-        .kanji-container.show-hint .hint-tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-        
+        .hint-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; border-width: 6px; border-style: solid; border-color: #38bdf8 transparent transparent transparent; }
+        .kanji-container:hover .hint-tooltip, .kanji-container.show-hint .hint-tooltip { visibility: visible; opacity: 1; }
         * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
@@ -76,13 +43,16 @@
                 <button onclick="selectSet('222.json')" class="w-full py-6 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl font-bold shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-lg">
                     SET 02: 탁음·장음·훈독 명사
                 </button>
+                <button onclick="selectSet('333.json')" class="w-full py-6 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl font-bold shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-lg">
+                    SET 03: 빈출 형용사 마스터
+                </button>
             </div>
         </div>
 
         <!-- [2] 퀴즈 화면 -->
         <div id="quiz-screen" class="hidden-screen">
             <div class="mb-4 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                <span>Daily Goal Progress</span>
+                <span>Goal Progress</span>
                 <span id="progress-text">0 / 20</span>
             </div>
             <div class="w-full h-1.5 bg-slate-800 rounded-full mb-8 overflow-hidden">
@@ -94,27 +64,22 @@
                     <p id="quiz-type-label" class="text-[10px] font-bold text-sky-400 tracking-widest uppercase">Check Meaning</p>
                     <button onclick="location.reload()" class="text-[10px] px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full border border-white/5 uppercase">세트 변경</button>
                 </div>
-
                 <div class="p-8">
                     <div id="question-container" class="text-center min-h-[220px] flex flex-col justify-center">
                         <div id="sentence-box" class="hidden mb-6 p-4 bg-slate-800/50 rounded-2xl border border-white/5 cursor-pointer hover:bg-slate-800 transition-colors" onclick="readQuestionSentence()">
                             <p id="sentence-context" class="text-slate-300 text-lg leading-relaxed"></p>
                         </div>
-                        
-                        <!-- 한자 힌트 기능이 포함된 구역 -->
                         <div class="kanji-container group" id="kanji-main-box">
-                            <span class="hint-tooltip" id="kanji-hint-text">힌트 로딩중...</span>
+                            <span class="hint-tooltip" id="kanji-hint-text">...</span>
                             <h2 id="question-word" class="text-6xl font-bold mb-2 text-white tracking-tight cursor-help" onclick="toggleHint(event)">...</h2>
                         </div>
-                        
-                        <p id="question-sub" class="text-slate-500 text-xs mt-3 tracking-tighter opacity-50">클릭하면 발음과 한자 힌트가 보입니다</p>
+                        <p id="question-sub" class="text-slate-500 text-xs mt-3 tracking-tighter opacity-50">클릭 시 발음+한자 힌트</p>
                     </div>
                     <div id="options" class="grid grid-cols-1 gap-3 mt-8"></div>
                 </div>
-                
                 <div class="px-8 py-6 bg-white/5 flex justify-between items-center">
                     <button onclick="toggleWrongNote()" class="text-slate-400 hover:text-white text-xs font-medium flex items-center gap-2">📋 오답 노트 (<span id="wrong-count">0</span>)</button>
-                    <span id="word-group-tag" class="text-[9px] bg-sky-500/10 text-sky-400 px-3 py-1 rounded-full font-bold border border-sky-500/20 tracking-widest uppercase">GROUP</span>
+                    <span id="word-group-tag" class="text-[9px] bg-sky-500/10 text-sky-400 px-3 py-1 rounded-full font-bold border border-sky-500/20 tracking-widest uppercase">N2</span>
                 </div>
             </div>
         </div>
@@ -122,10 +87,10 @@
         <!-- [3] 완료 화면 -->
         <div id="completion-screen" class="glass-card rounded-3xl p-12 text-center hidden-screen">
             <div class="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6"><span class="text-4xl">🎉</span></div>
-            <h2 class="text-3xl font-bold mb-3 tracking-tight">Mission Clear!</h2>
+            <h2 class="text-3xl font-bold mb-3 tracking-tight text-white">Mission Clear!</h2>
             <div class="flex flex-col gap-3">
                 <button onclick="toggleWrongNote()" class="w-full py-4 bg-sky-500 hover:bg-sky-400 text-white rounded-2xl font-bold transition-all shadow-lg">오답 확인</button>
-                <button onclick="continueStudying()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold transition-all">계속 학습</button>
+                <button onclick="continueStudying()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold transition-all">계속 학습하기</button>
                 <button onclick="resetDayForce()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-bold transition-all border border-white/5 text-sm">기록 초기화</button>
                 <button onclick="location.reload()" class="w-full py-4 bg-transparent text-slate-500 hover:text-slate-300 font-bold text-xs underline">메인으로</button>
             </div>
@@ -156,6 +121,7 @@
         let solvedCount = parseInt(localStorage.getItem('solvedCount')) || 0;
         let lastDate = localStorage.getItem('lastDate') || "";
         let wrongWords = JSON.parse(localStorage.getItem('wrongWords')) || [];
+        let isInfiniteMode = false; // [수정] 무한 모드 플래그 추가
 
         async function selectSet(fileName) {
             try {
@@ -166,7 +132,7 @@
                 document.getElementById('quiz-screen').classList.remove('hidden-screen');
                 initQuiz();
             } catch (error) {
-                alert(`파일(${fileName})을 불러오지 못했습니다.`);
+                alert(`파일(${fileName}) 로드 실패. 깃허브 확인 필요.`);
             }
         }
 
@@ -178,8 +144,15 @@
                 localStorage.setItem('solvedCount', 0);
                 localStorage.setItem('lastDate', today);
             }
+            
             updateProgressUI();
-            if (solvedCount >= GOAL) { showCompletion(); return; }
+
+            // [수정] 목표 달성 시 완료 화면 (무한 모드가 아닐 때만)
+            if (!isInfiniteMode && solvedCount === GOAL) {
+                showCompletion();
+                return;
+            }
+
             if (wordDatabase.length === 0) return;
 
             currentWord = wordDatabase[Math.floor(Math.random() * wordDatabase.length)];
@@ -200,11 +173,9 @@
 
             optionsContainer.innerHTML = '';
             sentenceBox.classList.add('hidden');
-            document.getElementById('kanji-main-box').classList.remove('show-hint'); // 힌트 초기화
+            document.getElementById('kanji-main-box').classList.remove('show-hint');
             document.getElementById('word-group-tag').innerText = word.group || 'N2';
             document.getElementById('wrong-count').innerText = wrongWords.length;
-
-            // 힌트 내용 설정 (JSON에 hanja_info가 있으면 사용, 없으면 요미가나만 사용)
             hintEl.innerText = word.hanja_info ? `${word.yomigana} [${word.hanja_info}]` : word.yomigana;
 
             let correctAnswer = (type === 'yomigana') ? word.yomigana : word.meaning;
@@ -228,14 +199,6 @@
                 btn.onclick = () => checkAnswer(opt, btn);
                 optionsContainer.appendChild(btn);
             });
-        }
-
-        // 모바일용 힌트 토글 및 음성 재생
-        function toggleHint(e) {
-            e.preventDefault();
-            const box = document.getElementById('kanji-main-box');
-            box.classList.toggle('show-hint');
-            readQuestionWord(); // 힌트 볼 때 발음도 같이 들려줌
         }
 
         function checkAnswer(selected, btn) {
@@ -269,7 +232,9 @@
             document.getElementById('completion-screen').classList.remove('hidden-screen');
         }
 
+        // [수정] 계속 학습하기 기능 완벽 수리
         function continueStudying() {
+            isInfiniteMode = true; // 무한 모드 활성화
             document.getElementById('completion-screen').classList.add('hidden-screen');
             document.getElementById('quiz-screen').classList.remove('hidden-screen');
             initQuiz(); 
@@ -277,6 +242,7 @@
 
         function resetDayForce() {
             if(confirm('기록을 초기화하시겠습니까?')) {
+                isInfiniteMode = false;
                 solvedCount = 0;
                 localStorage.setItem('solvedCount', 0);
                 document.getElementById('completion-screen').classList.add('hidden-screen');
@@ -293,7 +259,12 @@
             window.speechSynthesis.speak(msg);
         }
 
-        function readQuestionWord() { if (currentWord) speak(currentWord.yomigana); }
+        function toggleHint(e) {
+            e.preventDefault();
+            document.getElementById('kanji-main-box').classList.toggle('show-hint');
+            if (currentWord) speak(currentWord.yomigana);
+        }
+
         function readQuestionSentence() { if (currentWord && currentWord.sentence) speak(currentWord.sentence.replace(currentWord.kanji, currentWord.yomigana)); }
 
         function toggleWrongNote() {
@@ -306,7 +277,7 @@
             const list = document.getElementById('wrong-list');
             list.innerHTML = wrongWords.length ? wrongWords.map(w => `
                 <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between items-center cursor-pointer" onclick="speak('${w.yomigana}')">
-                    <div><span class="text-sky-400 text-[10px] font-bold">${w.yomigana}</span><h4 class="text-lg font-bold">${w.kanji}</h4></div>
+                    <div><span class="text-sky-400 text-[10px] font-bold">${w.yomigana}</span><h4 class="text-lg font-bold text-white">${w.kanji}</h4></div>
                     <span class="text-emerald-400 text-sm font-semibold">${w.meaning}</span>
                 </div>
             `).join('') : '<p class="text-center text-slate-500 mt-10">오답 기록이 없습니다.</p>';
