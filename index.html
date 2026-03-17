@@ -1,0 +1,48 @@
+<!-- ... (이전의 CSS 및 상단 구조 동일) ... -->
+<script>
+    // ... (이전의 변수 설정 동일) ...
+
+    function showCompletion() {
+        document.getElementById('quiz-screen').classList.add('hidden-screen');
+        document.getElementById('completion-screen').classList.remove('hidden-screen');
+        
+        // 결과창 버튼 영역 업데이트
+        const btnContainer = document.querySelector('#completion-screen .flex-col');
+        btnContainer.innerHTML = `
+            <button onclick="toggleWrongNote()" class="w-full py-4 bg-sky-500 hover:bg-sky-400 text-white rounded-2xl font-bold transition-all shadow-lg shadow-sky-500/20 mb-3">
+                오답 기록 확인하기
+            </button>
+            <button onclick="continueStudying()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-bold transition-all mb-3">
+                학습 계속하기 (무한 모드)
+            </button>
+            <button onclick="resetDayForce()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl font-bold transition-all border border-white/5 mb-3 text-sm">
+                오늘의 기록 초기화 (1번부터 다시)
+            </button>
+            <button onclick="location.reload()" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-slate-500 rounded-2xl font-bold transition-all text-xs">
+                메인으로 돌아가기
+            </button>
+        `;
+    }
+
+    // [개선] 학습 계속하기 (20문제가 넘어가도 계속 풀기)
+    function continueStudying() {
+        document.getElementById('completion-screen').classList.add('hidden-screen');
+        document.getElementById('quiz-screen').classList.remove('hidden-screen');
+        // 목표치를 현재 푼 문제보다 1000개 더 높게 잡아버림 (무한 느낌)
+        localStorage.setItem('solvedCount', solvedCount); 
+        initQuiz();
+    }
+
+    // [개선] 오늘의 기록 초기화 (기존 resetDayForce 강화)
+    function resetDayForce() {
+        if(confirm('오늘의 학습 기록을 초기화하고 1번 문제부터 다시 시작할까요?')) {
+            solvedCount = 0;
+            localStorage.setItem('solvedCount', 0);
+            document.getElementById('completion-screen').classList.add('hidden-screen');
+            document.getElementById('quiz-screen').classList.remove('hidden-screen');
+            initQuiz();
+        }
+    }
+
+    // ... (나머지 로직 동일) ...
+</script>
