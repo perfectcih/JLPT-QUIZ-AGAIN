@@ -97,7 +97,7 @@
   { "kanji": "相違", "yomigana": "そうい", "meaning": "상이(차이)", "group": "장음/촉음" },
   { "kanji": "装置", "yomigana": "そうち", "meaning": "장치", "group": "장음/촉음" },
   { "kanji": "中継", "yomigana": "ちゅうけい", "meaning": "중계", "group": "장음/촉음" },
-  { "kanji": "夢中", "yomigana": "むちゅう", "meaning": "열중(꿈속)", group: "장음/촉음" },
+  { "kanji": "夢中", "yomigana": "むちゅう", "meaning": "열중(꿈속)", "group": "장음/촉음" },
   { "kanji": "著者", "yomigana": "ちょしゃ", "meaning": "저자", "group": "장음/촉음" },
   { "kanji": "挑戦", "yomigana": "ちょうせん", "meaning": "도전", "group": "장음/촉음" },
   { "kanji": "戸棚", "yomigana": "とだな", "meaning": "찬장/선반", "group": "장음/촉음" },
